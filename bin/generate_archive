@@ -205,6 +205,7 @@ fi
 
 archive_gen_command="$0 $@"
 archive_date_generated="$(date)"
+archive_uname="$(uname -a)"
 archive_cwd="$(pwd)"
 archive_command=
 archive_sources=
@@ -284,6 +285,7 @@ END
     printf 'archive_gen_command="%s"\n'		"$archive_gen_command"
     printf 'archive_gen_version="%s"\n'		"$archive_gen_version"
     printf 'archive_date_generated="%s"\n'	"$archive_date_generated"
+    printf 'archive_uname="%s"\n'		"$archive_uname"
     printf 'archive_cwd="%s"\n'			"$archive_cwd"
     printf 'archive_command="%s"\n'		"$archive_command"
     printf 'archive_sources=%s\n'		"$(render_array "${archive_sources[@]}")"
