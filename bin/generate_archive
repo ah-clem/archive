@@ -261,9 +261,9 @@ cat <<- 'END'
 #
 #   The archive contents can be recovered using a script (i.e. extract_archive) which
 #   is "automatic" and checks the size and sha.  Alternatively, the archive can be
-#	easily checked and/or recovered manually.  Given an archive "archive":
+#   easily checked and/or recovered manually.  Given an archive "archive":
 #
-#	$ shasum -a 256 < archive
+#   $ shasum -a 256 < archive
 #   $ gpg -d archive > archive.out
 #   $ tar xf archive.out
 #
