@@ -1,7 +1,6 @@
 #	"bats" tests for generate_archive and extract_archive
 #
 #       see: https://github.com/bats-core/bats-core
-#       see: https://hub.docker.com/r/bats/bats
 #
 #       N.B. The script assumes that the bats intepreter is invoked from the
 #            root directory of the archive project
@@ -10,8 +9,6 @@
 #               run all .bats scripts in "test":
 #                       cd $ARCHIVE_HOME ; bats test
 #
-#               run all .bats scripts in "test" using docker:
-#                       docker run --rm -v "$(pwd):/mnt" -w /mnt bats/bats:latest test
 
 setup() {
     pushd bin
