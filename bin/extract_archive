@@ -215,6 +215,10 @@ assign_positional_args 1 "${_positionals[@]}"
 #		6. The overhead of creating/recovering complete archives and transfering to long-term storage
 #		   means that these archives will likely only be created and stored from time to
 #		   time (every few months?).  Don't count on recovering the latest stuff!
+#               7. For automated testing purposes, the environment variable "ARCHIVE_TEST_GPG" is
+#                  expanded.  If not empty, it should include parameters to gpg that supply a
+#                  passphrase without prompting interactively. e.g.:
+#                       ARCHIVE_TEST_GPG='--batch --pinentry-mode loopback --passphrase-file passphrase'
 #
 #	See: generate_archive
 
@@ -241,7 +245,7 @@ verbose()
 
 trap abort HUP INT TERM ERR
 
-# argument symantic error checking
+# argument semantic error checking
 
 if [ "${_arg_archive}" != '-' -a \( ! -f "${_arg_archive}" -o ! -r "${_arg_archive}" \) ]
 then
@@ -323,7 +327,7 @@ do
 	fi
     fi
 
-    cpipe+='gpg -d'
+    cpipe+='gpg -d $ARCHIVE_TEST_GPG'
 
     # either extract or write decypted archive to file/stdout
     if [ -z "${_arg_output}" ]
