@@ -9,6 +9,9 @@
 #               run all .bats scripts in "test":
 #                       cd $ARCHIVE_HOME ; bats test
 #
+#	In order to use the "ARCHIVE_TEST_GPG" variable, the scripts
+#	must be invoked with special "test" names. Protects against
+#	inadvertent injection of GPG arguments in normal use.
 
 setup() {
     pushd bin
@@ -25,6 +28,11 @@ setup() {
     export ARCHIVE_TEST_GPG='--batch --pinentry-mode loopback --passphrase-file passphrase'
 
     cd testdir
+    ln $(which generate_archive) generate_archive_test
+    ln $(which extract_archive) extract_archive_test
+
+    export GEN=$(pwd)/generate_archive_test
+    export EXT=$(pwd)/extract_archive_test
 }
 
 @test "check environment" {
@@ -32,126 +40,126 @@ setup() {
 }
 
 @test "generate from tar, discard results" {
-    generate_archive -o /dev/null dir1 dir2
+    ${GEN} -o /dev/null dir1 dir2
 }
 
 @test "generate from tar, check results" {
-    generate_archive -o gen.out.tgz dir1 dir2
-    extract_archive -a gen.out.tgz -c
+    ${GEN} -o gen.out.tgz dir1 dir2
+    ${EXT} -a gen.out.tgz -c
 }
 
 @test "generate from tar to stdout, check results" {
-    generate_archive -o - dir1 dir2 > gen.stdout.tgz
-    extract_archive -a gen.stdout.tgz -c
+    ${GEN} -o - dir1 dir2 > gen.stdout.tgz
+    ${EXT} -a gen.stdout.tgz -c
 }
 
 @test "generate from stdin, check results from stdin" {
     tar cf out.tar dir1 file1
-    generate_archive -a - -o - < out.tar > gen.stdout.tgz
-    extract_archive -a - -c < gen.stdout.tgz
+    ${GEN} -a - -o - < out.tar > gen.stdout.tgz
+    ${EXT} -a - -c < gen.stdout.tgz
 }
 
 @test "check alternate manifest names" {
     tar cf out.tar dir1 file1
-    generate_archive -a - -m 'my manifest' -o - < out.tar > gen.stdout.tgz
-    extract_archive -a - -m 'my manifest' -c < gen.stdout.tgz
+    ${GEN} -a - -m 'my manifest' -o - < out.tar > gen.stdout.tgz
+    ${EXT} -a - -m 'my manifest' -c < gen.stdout.tgz
 }
 
 @test "read from tar archive, don't check results" {
     tar cf out.tar dir1 file1
-    generate_archive -a out.tar -o - > gen.stdout.tgz
-    extract_archive -a - -C -o - < gen.stdout.tgz > ext.out
+    ${GEN} -a out.tar -o - > gen.stdout.tgz
+    ${EXT} -a - -C -o - < gen.stdout.tgz > ext.out
     tar tf ext.out
 }
 
 @test "generate from tar, extract all, don't check results but provide bogus manifest" {
-    generate_archive -o gen.out.tgz dir1 dir2
+    ${GEN} -o gen.out.tgz dir1 dir2
     mkdir extract
     cd extract
     ln ../passphrase
-    extract_archive -C -a ../gen.out.tgz
+    ${EXT} -C -a ../gen.out.tgz
     [ -d "dir1" -a -d "dir2" ]
 }
 
 @test "generate from tar, extract only dir2, check results" {
-    generate_archive -o gen.out.tgz dir1 dir2
+    ${GEN} -o gen.out.tgz dir1 dir2
     mkdir extract
     cd extract
     ln ../passphrase
-    extract_archive -a ../gen.out.tgz -m ../manifest dir2
+    ${EXT} -a ../gen.out.tgz -m ../manifest dir2
     [ -d "dir2" -a ! -e "dir1" ]
 }
 
 @test "generate from tar, extract all named targets, diff results" {
-    generate_archive -o gen.out.tgz dir1 dir2
+    ${GEN} -o gen.out.tgz dir1 dir2
     mkdir extract
     cd extract
     ln ../passphrase
-    extract_archive -a ../gen.out.tgz -m ../manifest dir2 dir1
+    ${EXT} -a ../gen.out.tgz -m ../manifest dir2 dir1
     diff -r dir1 ../dir1
     diff -r dir2 ../dir2
 }
 
 @test "generate from tar with white space in args, extract named targets, diff results" {
-    generate_archive -o gen.out.tgz 'white space' file2 'black space' dir2
+    ${GEN} -o gen.out.tgz 'white space' file2 'black space' dir2
     mkdir extract
     cd extract
     ln ../passphrase
-    extract_archive -a ../gen.out.tgz -m ../manifest 'black space' dir2 'white space'
+    ${EXT} -a ../gen.out.tgz -m ../manifest 'black space' dir2 'white space'
     diff -r dir2 ../dir2
     diff -r 'black space' '../black space'
     diff -r 'white space' '../white space'
 }
 
 @test "fail on no output specified" {
-    run generate_archive dir1 dir2 > gen.stdout.tgz
+    run ${GEN} dir1 dir2 > gen.stdout.tgz
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on missing input, generate" {
-    run generate_archive -a blah dir1 dir2 -o gen.stdout.tgz
+    run ${GEN} -a blah dir1 dir2 -o gen.stdout.tgz
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on missing input, extract" {
-    run extract_archive -a blah
+    run ${EXT} -a blah
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on missing manifest, extract" {
-    run extract_archive -a - -m bogus < /dev/null
+    run ${EXT} -a - -m bogus < /dev/null
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on check and no-check" {
-    run extract_archive -a - -c -C < /dev/null
+    run ${EXT} -a - -c -C < /dev/null
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on check with output" {
-    run extract_archive -a - -c -o - < /dev/null > /dev/null
+    run ${EXT} -a - -c -o - < /dev/null > /dev/null
     [ "${status}" -ne 0 ]
 }
 
 @test "fail on generate from stdin and tar" {
     tar cf out.tar dir1 file1
-    run generate_archive -a - -o - dir1 dir2 < out.tar > gen.stdout.tgz
+    run ${GEN} -a - -o - dir1 dir2 < out.tar > gen.stdout.tgz
     [ "${status}" -ne 0 ]
 }
 
 @test "fail when sha is wrong" {
-    generate_archive -o - dir1 dir2 > gen.stdout.tgz
+    ${GEN} -o - dir1 dir2 > gen.stdout.tgz
     sed -f sedfile-sha manifest > manifest.bad
-    run extract_archive -m manifest.bad -a gen.stdout.tgz -c
+    run ${EXT} -m manifest.bad -a gen.stdout.tgz -c
     [ "${status}" -ne 0 ]
 }
 
 @test "fail when size is wrong, extract" {
-    generate_archive -o gen.out.tgz dir1 dir2
+    ${GEN} -o gen.out.tgz dir1 dir2
     mkdir extract
     cd extract
     ln ../passphrase
     sed -f ../sedfile-size ../manifest > manifest.bad
-    run extract_archive -m manifest.bad -a ../gen.out.tgz
+    run ${EXT} -m manifest.bad -a ../gen.out.tgz
     [ "${status}" -ne 0 ]
 }

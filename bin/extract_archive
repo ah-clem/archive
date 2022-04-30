@@ -245,6 +245,14 @@ verbose()
 
 trap abort HUP INT TERM ERR
 
+# security check: don't allow environment passphrase unless under test
+
+script_name=${0##*/}
+if [ -n "$ARCHIVE_TEST_GPG" -a ! $script_name = "extract_archive_test" ]
+then
+    die "Error: can't use GPG params from environment outside of testing"
+fi
+
 # argument semantic error checking
 
 if [ "${_arg_archive}" != '-' -a \( ! -f "${_arg_archive}" -o ! -r "${_arg_archive}" \) ]
