@@ -19,6 +19,28 @@ The archive is checked against the manifest for correct size and sha256 sum.
 The archive is checked along with decryption and/or extraction.
 Checking can be disabled (-C) if, for example, the manifest is not available.
 
+## build_archive
+
+This is a helper script rather specific to a single use case: generate an archive
+of directories found under the user's home (`$HOME`) directory.  The directories
+may be named on the command line but, more interestingly, can be listed in a file.
+In this manner, the "dirfile" can be kept around to use easily re-create (update)
+the archive.  Since `build_archive` always uses the home directory as a base
+location, it need not be run from any particular location.  It is common to keep
+the "dirfile" in the archive (and manifest) destination directory: all the info
+is in one place and out of the way.
+
+## push_archive
+
+Another helper script to push archives to AWS s3 (DEEP_ARCHIVE). The specific use
+case supported is based on using the folder hierarchy of the archive staging area
+to build a similar hierarchy in s3. It is assumed that the staging area is rooted
+at a directory named "archives".  See the comments in the code for an example: it
+makes things clearer.
+
+N.B. the helper scripts have no test scripts, but they have been used and seem
+to work!
+
 ## code and dependencies
 
 The scripts are written in `bash`.
